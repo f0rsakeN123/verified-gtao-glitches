@@ -1,24 +1,12 @@
-<!DOCTYPE html>
-<html>
-<head>
-<style>
-    body { background: #0f172a; color: white; font-family: sans-serif; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }
-    .card { background: rgba(255, 255, 255, 0.05); backdrop-filter: blur(15px); padding: 40px; border-radius: 20px; border: 1px solid rgba(255,255,255,0.1); width: 320px; text-align: center; }
-    input { width: 100%; padding: 12px; margin: 10px 0; background: #1e293b; border: 1px solid #334155; border-radius: 8px; color: white; box-sizing: border-box; }
-    button { width: 100%; padding: 12px; background: #3b82f6; border: none; border-radius: 8px; color: white; cursor: pointer; font-weight: bold; }
-    .hidden { display: none; }
-    p { cursor: pointer; font-size: 0.8em; margin-top: 15px; color: #94a3b8; }
-</style>
-</head>
-<body>
-
 <div class="card" id="app">
     <h2 id="title">Login</h2>
-    <input type="text" id="psn" placeholder="PSN ID">
-    <input type="password" id="pass" placeholder="Password">
-    <div id="emailDiv" class="hidden"><input type="email" id="email" placeholder="Email"></div>
-    <button onclick="handleAction()" id="btn">Sign In</button>
-    <p onclick="switchMode()" id="toggleText">Don't have account? Register</p>
+    <div id="fields">
+        <input type="text" id="psn" placeholder="PSN ID">
+        <div id="emailBox" class="hidden"><input type="email" id="email" placeholder="Email"></div>
+        <input type="password" id="pass" placeholder="Password">
+    </div>
+    <button id="btn" onclick="handleAction()">Sign In</button>
+    <p id="msg"></p> <p onclick="switchMode()" id="toggleText">Don't have account? Register</p>
 </div>
 
 <script>
@@ -28,13 +16,17 @@
     function switchMode() {
         mode = mode === 'login' ? 'register' : 'login';
         document.getElementById('title').innerText = mode === 'login' ? 'Login' : 'Register';
-        document.getElementById('emailDiv').classList.toggle('hidden');
-        document.getElementById('btn').innerText = mode === 'login' ? 'Sign In' : 'Send Code';
+        document.getElementById('emailBox').classList.toggle('hidden');
+        document.getElementById('btn').innerText = mode === 'login' ? 'Sign In' : 'Send Verification Code';
         document.getElementById('toggleText').innerText = mode === 'login' ? 'Don\'t have account? Register' : 'Already have account? Login';
+        document.getElementById('msg').innerText = "";
     }
 
     async function handleAction() {
-        let payload = { action: mode, psn: document.getElementById('psn').value, password: document.getElementById('pass').value, email: document.getElementById('email').value };
+        let msgEl = document.getElementById('msg');
+        let payload = { action: mode, psn: document.getElementById('psn').value, password: document.getElementById('pass').value };
+        if(mode === 'register') payload.email = document.getElementById('email').value;
+
         let response = await fetch(url, { method: 'POST', body: JSON.stringify(payload) });
         let result = await response.json();
         
@@ -43,11 +35,10 @@
             let userCode = prompt("Enter 6-digit code sent to email:");
             if(userCode === savedCode) {
                 payload.action = 'save';
-                await fetch(url, { method: 'POST', body: JSON.stringify(payload) });
-                alert("Registration Complete!");
-            }
-        } else { alert(result.message); }
+                let finalResp = await fetch(url, { method: 'POST', body: JSON.stringify(payload) });
+                let finalRes = await finalResp.json();
+                msgEl.innerText = finalRes.message;
+            } else { msgEl.innerText = "Invalid Code!"; }
+        } else { msgEl.innerText = result.message; }
     }
 </script>
-</body>
-</html>
