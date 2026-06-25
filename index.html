@@ -2,7 +2,7 @@
 <html>
 <head>
 <style>
-    body { background: #0f172a; color: white; font-family: 'Segoe UI', sans-serif; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }
+    body { background: #0f172a; color: white; font-family: sans-serif; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }
     .card { background: rgba(255, 255, 255, 0.05); backdrop-filter: blur(15px); padding: 40px; border-radius: 20px; border: 1px solid rgba(255,255,255,0.1); width: 320px; text-align: center; }
     input { width: 100%; padding: 12px; margin: 10px 0; background: #1e293b; border: 1px solid #334155; border-radius: 8px; color: white; box-sizing: border-box; }
     button { width: 100%; padding: 12px; background: #3b82f6; border: none; border-radius: 8px; color: white; cursor: pointer; font-weight: bold; }
@@ -14,27 +14,27 @@
 
 <div class="card" id="app">
     <h2 id="title">Login</h2>
-    <div id="view">
-        <input type="text" id="psn" placeholder="PSN ID">
-        <input type="password" id="pass" placeholder="Password">
-        <button onclick="handleAction()">Sign In</button>
-        <p onclick="switchMode()">Don't have account? Register</p>
-    </div>
+    <input type="text" id="psn" placeholder="PSN ID">
+    <input type="password" id="pass" placeholder="Password">
+    <div id="emailDiv" class="hidden"><input type="email" id="email" placeholder="Email"></div>
+    <button onclick="handleAction()" id="btn">Sign In</button>
+    <p onclick="switchMode()" id="toggleText">Don't have account? Register</p>
 </div>
 
 <script>
     let mode = 'login'; let savedCode = '';
-    const url = 'YOUR_WEB_APP_URL_HERE';
+    const url = 'YOUR_WEB_APP_URL_HERE'; // REPLACED WITH YOUR /exec URL
 
     function switchMode() {
         mode = mode === 'login' ? 'register' : 'login';
         document.getElementById('title').innerText = mode === 'login' ? 'Login' : 'Register';
+        document.getElementById('emailDiv').classList.toggle('hidden');
+        document.getElementById('btn').innerText = mode === 'login' ? 'Sign In' : 'Send Code';
+        document.getElementById('toggleText').innerText = mode === 'login' ? 'Don\'t have account? Register' : 'Already have account? Login';
     }
 
     async function handleAction() {
-        let payload = { action: mode, psn: document.getElementById('psn').value, password: document.getElementById('pass').value };
-        if(mode === 'register') payload.email = prompt("Enter Email");
-
+        let payload = { action: mode, psn: document.getElementById('psn').value, password: document.getElementById('pass').value, email: document.getElementById('email').value };
         let response = await fetch(url, { method: 'POST', body: JSON.stringify(payload) });
         let result = await response.json();
         
@@ -44,7 +44,7 @@
             if(userCode === savedCode) {
                 payload.action = 'save';
                 await fetch(url, { method: 'POST', body: JSON.stringify(payload) });
-                alert("Registered!");
+                alert("Registration Complete!");
             }
         } else { alert(result.message); }
     }
