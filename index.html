@@ -1,45 +1,53 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Registration</title>
-    <style>
-        body { font-family: sans-serif; display: flex; justify-content: center; padding: 50px; }
-        form { display: flex; flex-direction: column; width: 300px; gap: 10px; }
-    </style>
+<style>
+    body { background: #0f172a; color: white; font-family: 'Segoe UI', sans-serif; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }
+    .card { background: rgba(255, 255, 255, 0.05); backdrop-filter: blur(15px); padding: 40px; border-radius: 20px; border: 1px solid rgba(255,255,255,0.1); width: 320px; text-align: center; }
+    input { width: 100%; padding: 12px; margin: 10px 0; background: #1e293b; border: 1px solid #334155; border-radius: 8px; color: white; box-sizing: border-box; }
+    button { width: 100%; padding: 12px; background: #3b82f6; border: none; border-radius: 8px; color: white; cursor: pointer; font-weight: bold; }
+    .hidden { display: none; }
+    p { cursor: pointer; font-size: 0.8em; margin-top: 15px; color: #94a3b8; }
+</style>
 </head>
 <body>
 
-<form id="regForm">
-    <h2>Access Registration</h2>
-    <input type="text" id="psn" placeholder="PSN ID" required>
-    <input type="email" id="email" placeholder="Email" required>
-    <input type="password" id="password" placeholder="Password (min 6 chars)" required minlength="6">
-    <button type="submit">Register</button>
-    <p id="msg"></p>
-</form>
+<div class="card" id="app">
+    <h2 id="title">Login</h2>
+    <div id="view">
+        <input type="text" id="psn" placeholder="PSN ID">
+        <input type="password" id="pass" placeholder="Password">
+        <button onclick="handleAction()">Sign In</button>
+        <p onclick="switchMode()">Don't have account? Register</p>
+    </div>
+</div>
 
 <script>
-    const scriptURL = 'https://script.google.com/macros/s/AKfycbzYU9K4cQjKiS8j46t8tXZE7JUiDHvet5gfD6gT3gMRjTroY5VL6TGIBb51wBwALpzIZg/exec';
-    const form = document.getElementById('regForm');
-    
-    form.addEventListener('submit', e => {
-        e.preventDefault();
-        document.getElementById('msg').innerText = "Processing...";
-        
-        fetch(scriptURL, {
-            method: 'POST',
-            mode: 'no-cors', // Essential for Google Apps Script
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                psn: document.getElementById('psn').value,
-                email: document.getElementById('email').value,
-                password: document.getElementById('password').value
-            })
-        }).then(() => {
-            document.getElementById('msg').innerText = "Request submitted! Check your status.";
-        });
-    });
-</script>
+    let mode = 'login'; let savedCode = '';
+    const url = 'YOUR_WEB_APP_URL_HERE';
 
+    function switchMode() {
+        mode = mode === 'login' ? 'register' : 'login';
+        document.getElementById('title').innerText = mode === 'login' ? 'Login' : 'Register';
+    }
+
+    async function handleAction() {
+        let payload = { action: mode, psn: document.getElementById('psn').value, password: document.getElementById('pass').value };
+        if(mode === 'register') payload.email = prompt("Enter Email");
+
+        let response = await fetch(url, { method: 'POST', body: JSON.stringify(payload) });
+        let result = await response.json();
+        
+        if(result.status === 'codeSent') {
+            savedCode = result.code;
+            let userCode = prompt("Enter 6-digit code sent to email:");
+            if(userCode === savedCode) {
+                payload.action = 'save';
+                await fetch(url, { method: 'POST', body: JSON.stringify(payload) });
+                alert("Registered!");
+            }
+        } else { alert(result.message); }
+    }
+</script>
 </body>
 </html>
