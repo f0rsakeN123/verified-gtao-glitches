@@ -1,57 +1,196 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Platform Access</title>
+    <style>
+        body { 
+            background: #0f172a; 
+            color: white; 
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+            display: flex; 
+            justify-content: center; 
+            align-items: center; 
+            height: 100vh; 
+            margin: 0; 
+        }
+        .card { 
+            background: rgba(255, 255, 255, 0.05); 
+            backdrop-filter: blur(15px); 
+            padding: 40px; 
+            border-radius: 20px; 
+            border: 1px solid rgba(255,255,255,0.1); 
+            width: 320px; 
+            text-align: center; 
+            box-shadow: 0 4px 30px rgba(0, 0, 0, 0.5);
+        }
+        input { 
+            width: 100%; 
+            padding: 12px; 
+            margin: 10px 0; 
+            background: #1e293b; 
+            border: 1px solid #334155; 
+            border-radius: 8px; 
+            color: white; 
+            box-sizing: border-box; 
+            font-size: 14px;
+        }
+        input:focus {
+            outline: none;
+            border-color: #3b82f6;
+        }
+        button { 
+            width: 100%; 
+            padding: 12px; 
+            background: #3b82f6; 
+            border: none; 
+            border-radius: 8px; 
+            color: white; 
+            cursor: pointer; 
+            font-weight: bold; 
+            margin-top: 15px;
+            transition: background 0.3s;
+        }
+        button:hover {
+            background: #2563eb;
+        }
+        .hidden { 
+            display: none; 
+        }
+        .toggle-text { 
+            cursor: pointer; 
+            font-size: 0.85em; 
+            margin-top: 20px; 
+            color: #94a3b8; 
+            transition: color 0.3s;
+        }
+        .toggle-text:hover {
+            color: white;
+        }
+        #msg { 
+            font-size: 0.9em; 
+            margin-top: 15px; 
+            color: #ef4444; /* Crvena za errore */
+            font-weight: bold;
+        }
+        #msg.success { 
+            color: #22c55e; /* Zelena za uspjeh */
+        }
+    </style>
+</head>
+<body>
+
 <div class="card" id="app">
     <h2 id="title">Login</h2>
     <div id="fields">
         <input type="text" id="psn" placeholder="PSN ID">
-        <input type="password" id="pass" placeholder="Password">
         <div id="emailBox" class="hidden"><input type="email" id="email" placeholder="Email"></div>
+        <input type="password" id="pass" placeholder="Password">
+        
         <div id="codeBox" class="hidden"><input type="text" id="vCode" placeholder="Enter 6-digit Code"></div>
     </div>
     <button id="btn" onclick="handleAction()">Sign In</button>
-    <p id="msg"></p>
-    <p onclick="switchMode()" id="toggleText">Don't have account? Register</p>
+    
+    <p id="msg"></p> 
+    
+    <p onclick="switchMode()" class="toggle-text" id="toggleText">Don't have account? Register</p>
 </div>
 
 <script>
-    let mode = 'login'; let savedCode = '';
+    let mode = 'login'; 
+    let savedCode = '';
     const url = 'https://script.google.com/macros/s/AKfycbzYU9K4cQjKiS8j46t8tXZE7JUiDHvet5gfD6gT3gMRjTroY5VL6TGIBb51wBwALpzIZg/exec';
 
     function switchMode() {
         mode = mode === 'login' ? 'register' : 'login';
+        
+        // Mijenjanje naslova i gumba
         document.getElementById('title').innerText = mode === 'login' ? 'Login' : 'Register';
-        document.getElementById('emailBox').classList.toggle('hidden', mode === 'login');
         document.getElementById('btn').innerText = mode === 'login' ? 'Sign In' : 'Send Verification Code';
         document.getElementById('toggleText').innerText = mode === 'login' ? 'Don\'t have account? Register' : 'Already have account? Login';
+        
+        // Prikazivanje/skrivanje polja
+        document.getElementById('emailBox').classList.toggle('hidden', mode === 'login');
+        document.getElementById('codeBox').classList.add('hidden'); // Uvijek sakrij kod polje pri promjeni
+        
+        // Čišćenje poruka
         document.getElementById('msg').innerText = "";
+        document.getElementById('msg').className = "";
+        
+        // Čišćenje inputa (opcionalno, ali dobro za UX)
+        document.getElementById('vCode').value = "";
     }
 
     async function handleAction() {
         let msgEl = document.getElementById('msg');
         let btn = document.getElementById('btn');
+        
+        // Resetiranje poruke na "Loading..." dok čeka server
+        msgEl.innerText = "Processing...";
+        msgEl.className = "";
+
         let payload = { action: mode, psn: document.getElementById('psn').value, password: document.getElementById('pass').value };
         
+        // REGISTRACIJA
         if (mode === 'register') {
+            payload.email = document.getElementById('email').value;
+            
+            // Faza 1: Slanje koda
             if (btn.innerText === 'Send Verification Code') {
-                payload.email = document.getElementById('email').value;
+                if(!payload.psn || !payload.email || !payload.password) {
+                    msgEl.innerText = "Please fill all fields.";
+                    return;
+                }
+                
+                payload.action = 'sendCode';
                 let resp = await fetch(url, { method: 'POST', body: JSON.stringify(payload) });
                 let res = await resp.json();
+                
                 if(res.status === 'codeSent') {
                     savedCode = res.code;
-                    document.getElementById('codeBox').classList.remove('hidden');
+                    document.getElementById('codeBox').classList.remove('hidden'); // Pokaži polje za kod
                     btn.innerText = 'Verify & Complete';
-                } else { msgEl.innerText = res.message; }
-            } else {
+                    msgEl.innerText = "Verification code sent to your email!";
+                    msgEl.className = "success";
+                } else { 
+                    msgEl.innerText = res.message; 
+                }
+            } 
+            // Faza 2: Provjera koda i spremanje
+            else {
                 if(document.getElementById('vCode').value === savedCode) {
                     payload.action = 'save';
-                    payload.email = document.getElementById('email').value;
                     let resp = await fetch(url, { method: 'POST', body: JSON.stringify(payload) });
                     let res = await resp.json();
+                    
                     msgEl.innerText = res.message;
-                } else { msgEl.innerText = "Wrong verification code!"; }
+                    if(res.status === 'success') {
+                        msgEl.className = "success";
+                        btn.classList.add('hidden'); // Sakrij gumb kad je gotovo
+                    }
+                } else { 
+                    msgEl.innerText = "Invalid verification code!"; 
+                }
             }
-        } else {
+        } 
+        // LOGIN
+        else {
+            if(!payload.psn || !payload.password) {
+                msgEl.innerText = "Please enter PSN ID and Password.";
+                return;
+            }
+            
             let resp = await fetch(url, { method: 'POST', body: JSON.stringify(payload) });
             let res = await resp.json();
+            
             msgEl.innerText = res.message;
+            if(res.status === 'success') {
+                msgEl.className = "success";
+                // Ovdje kasnije možeš dodati redirect na neku drugu stranicu nakon uspješnog logina
+            }
         }
     }
 </script>
+</body>
+</html>
